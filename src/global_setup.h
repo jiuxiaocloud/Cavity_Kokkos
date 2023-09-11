@@ -7,19 +7,11 @@ using real_t = double;
 using real_t = float;
 #endif
 
-// // Data struct
-// // #ifdef KOKKOS_ENABLE_CUDA
-// // #define MemSpace Kokkos::CudaSpace
-// // #endif
-// // #ifdef KOKKOS_ENABLE_HIP
-// // #define MemSpace Kokkos::Experimental::HIPSpace
-// // #endif
-// // #ifdef KOKKOS_ENABLE_OPENMPTARGET
-// // #define MemSpace Kokkos::OpenMPTargetSpace
-// // #endif
-// #ifndef MemSpace
-// #define MemSpace Kokkos::DefaultExecutionSpace
-// #endif
+// D2Q9
+#define Q 9
+const real_t w0 = 4.0 / 9.0;
+const real_t w1 = 1.0 / 9.0;
+const real_t w2 = 1.0 / 36.0;
 
 using exe_space = Kokkos::DefaultExecutionSpace::execution_space;
 using MemSpace = Kokkos::DefaultExecutionSpace::memory_space;

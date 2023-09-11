@@ -1,5 +1,4 @@
 /build/*
 cavity
-/external/mpiPacks
 /Re1000
 *.plt
