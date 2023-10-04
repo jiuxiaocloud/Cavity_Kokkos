@@ -9,11 +9,9 @@ int main(int argc, char *argv[])
     getInput(Ini + "/input.txt", Re_, U_, rho_, NX, NY);
 
     if (argc == 2)
-        sscanf(argv[1], "%d", &mx);
+        sscanf(argv[1], "%d", &NX), NY = NX;
     else if (argc == 3)
-        sscanf(argv[1], "%d", &mx), sscanf(argv[2], "%d", &NX), NY = NX;
-    else if (argc == 4)
-        sscanf(argv[1], "%d", &mx), sscanf(argv[2], "%d", &NX), sscanf(argv[3], "%d", &NY);
+        sscanf(argv[1], "%d", &NX), sscanf(argv[2], "%d", &NY);
     // ##Begin# MPI ###########################################################################//
     int rank = 0, nranks = 1;
     MPI_Init(&argc, &argv);
