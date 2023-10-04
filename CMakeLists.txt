@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # set(CMAKE_CXX_COMPILER "${CMAKE_SOURCE_DIR}/external/kokkos/bin/nvcc_wrapper")
 # some options in CMAKE && Kokkos need CACHE STRING FORCE set
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build." FORCE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
 PROJECT(CavityKokkos LANGUAGES CXX)
