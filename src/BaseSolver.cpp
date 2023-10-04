@@ -111,10 +111,10 @@ void BaseSolver::Initialize()
     // Kokkos::fence();
 }
 
-void BaseSolver::Evolution()
+void BaseSolver::Evolution(int tn)
 {
     Collision();
-    Propagation();
+    Propagation(tn);
     Boundary();
     Update();
 }
@@ -132,8 +132,9 @@ void BaseSolver::Collision()
     Kokkos::fence();
 }
 
-void BaseSolver::Propagation()
+void BaseSolver::Propagation(int tn)
 {
+
     Kokkos::parallel_for(
         NX * NY, KOKKOS_CLASS_LAMBDA(const int64_t id) {
     int i, j;
@@ -162,17 +163,51 @@ void BaseSolver::Propagation()
 
         MpiTransBufX();
 
+        std::string name = "./MPIBuffer_" + std::to_string(tn) + "_rank_" + std::to_string(nranks) + "_" + std::to_string(rank) + ".plt";
+        std::ofstream out(name.c_str());
+        out.setf(std::ios::fixed, std::ios::floatfield);
+        out.precision(6);
+        out << "Title=\"Lid Driven Flow\"\n";
+        out << "VARIABLES = ";
+        for (size_t k = 0; k < Q; k++)
+            out << ",\" Sdmin(" << k << ")\"";
+        for (size_t k = 0; k < Q; k++)
+            out << ",\" Sdmax(" << k << ")\"";
+        for (size_t k = 0; k < Q; k++)
+            out << ",\" Rvmin(" << k << ")\"";
+        for (size_t k = 0; k < Q; k++)
+            out << ",\" Rvmax(" << k << ")\"";
+        for (int id = 0; id < NY; id++)
+        {
+            for (int k = 0; k < Q; k++)
+            {
+                for (size_t k = 0; k < Q; k++)
+                    out << h_TransBufSend_xmin(id, k) << " ";
+                out << std::endl;
+                for (size_t k = 0; k < Q; k++)
+                    out << h_TransBufSend_xmax(id, k) << " ";
+                out << std::endl;
+                for (size_t k = 0; k < Q; k++)
+                    out << h_TransBufRecv_xmin(id, k) << " ";
+                out << std::endl;
+                for (size_t k = 0; k < Q; k++)
+                    out << h_TransBufRecv_xmax(id, k) << " ";
+                out << std::endl;
+            }
+            out << std::endl;
+        }
+
         Kokkos::parallel_for( // // Xmin Copy Back
             NY, KOKKOS_CLASS_LAMBDA(const int64_t id) {
                 for (size_t k = 0; k < Q; k++)
                     if (1 == iex(k))
-                        f(0, id, k) = d_TransBufRecv_xmin(id, k);
+                        f(0, (id + iey(k) + NY) % NY, k) = d_TransBufRecv_xmin(id, k);
             });
         Kokkos::parallel_for( // // Xmax Copy Back
             NY, KOKKOS_CLASS_LAMBDA(const int64_t id) {
                 for (size_t k = 0; k < Q; k++)
                     if (-1 == iex(k))
-                        f(NX - 1, id, k) = d_TransBufRecv_xmax(id, k);
+                        f(NX - 1, (id + iey(k) + NY) % NY, k) = d_TransBufRecv_xmax(id, k);
             });
         Kokkos::fence();
     }
@@ -197,13 +232,13 @@ void BaseSolver::Propagation()
             NX, KOKKOS_CLASS_LAMBDA(const int64_t id) {
                 for (size_t k = 0; k < Q; k++)
                     if (1 == iey(k))
-                        f(id, 0, k) = d_TransBufRecv_ymin(id, k);
+                        f((id + iex(k) + NX) % NX, 0, k) = d_TransBufRecv_ymin(id, k);
             });
         Kokkos::parallel_for( // // Ymax Copy Back
             NX, KOKKOS_CLASS_LAMBDA(const int64_t id) {
                 for (size_t k = 0; k < Q; k++)
                     if (-1 == iey(k))
-                        f(id, NY - 1, k) = d_TransBufRecv_ymax(id, k);
+                        f((id + iex(k) + NX) % NX, NY - 1, k) = d_TransBufRecv_ymax(id, k);
             });
         Kokkos::fence();
     }
@@ -378,9 +413,10 @@ void BaseSolver::Cal_cd_Fd()
 
 void BaseSolver::Output(const int m, std::string Path)
 {
-    StreamFunction();
-    VorticityFunction();
-    Cal_cd_Fd();
+    // StreamFunction();
+    // VorticityFunction();
+    // Cal_cd_Fd();
+
     H_Data3d h_f = Kokkos::create_mirror_view(f), h_fb = Kokkos::create_mirror_view(fb);
     Kokkos::deep_copy(h_f, f);
     Kokkos::deep_copy(h_fb, fb);
@@ -394,21 +430,31 @@ void BaseSolver::Output(const int m, std::string Path)
     std::ofstream out(name.c_str());
     out.setf(std::ios::fixed, std::ios::floatfield);
     out.precision(6);
-    out << "Title=\"Lid Driven Flow\"\n"
-        << "VARIABLES = \"X\",\"Y\",\"U\",\"V\",\"rho\",\"p\",\"PSI\",\"Vorticity\"\n"
-        << "\nZONE T= \"BOX_Fd_" << O_Fd << "_cd_" << O_cd << "_Error_" << L2Error << "\",I= " << NX << ",J = " << NY << ",F = POINT" << std::endl;
+    out << "Title=\"Lid Driven Flow\"\n";
+    out << "VARIABLES = \"X\",\"Y\",\"I\",\"J\",\"U\",\"V\",\"rho\",\"p\"";
+    for (size_t k = 0; k < Q; k++)
+        out << ",\" f(" << k << ")\"";
+    for (size_t k = 0; k < Q; k++)
+        out << ",\"fb(" << k << ")\"";
+    // <<\"PSI\",\"Vorticity\"\n"
+    out << "\nZONE T= \"BOX_Fd_" << O_Fd << "_cd_" << O_cd << "_Error_" << L2Error << "\",I= " << NX << ",J = " << NY << ",F = POINT" << std::endl;
     for (int j = 0; j < NY; j++)
         for (int i = 0; i < NX; i++)
         {
-            out << ((real_t(i) + 0.5) / (NX * MX) + real_t(1.0) / MX * bl.myMpiPos_x) << " " //* 1
-                << ((real_t(j) + 0.5) / (NY * MY) + real_t(1.0) / MY * bl.myMpiPos_y) << " " //* MY
-                << h_ux(i, j) / U << " " << h_uy(i, j) / U << " " << h_rho(i, j) / rho0 << " " << (h_rho(i, j) - rho0) / 3.0 << " ";
-            out << h_stream_func(i, j) << " ";
-            out << h_vorticity(i, j) << " ";
-            // for (size_t k = 0; k < Q; k++)
-            //     out << h_f(i, j, k) << " ";
-            // for (size_t k = 0; k < Q; k++)
-            //     out << h_fb(i, j, k) << " ";
+            out << ((real_t(i) + 0.5) / (NX * MX) + real_t(1.0) / MX * bl.myMpiPos_x) << " "; //* X
+            out << ((real_t(j) + 0.5) / (NY * MY) + real_t(1.0) / MY * bl.myMpiPos_y) << " "; //* Y
+            out << i + NX * bl.myMpiPos_x << " " << j + NY * bl.myMpiPos_y << " ";            //* i, j
+            out << h_ux(i, j) / U << " " << h_uy(i, j) / U << " " << h_rho(i, j) / rho0 << " ";
+            out << (h_rho(i, j) - rho0) / 3.0 << " ";
+            // out << h_stream_func(i, j) << " ";
+            // out << h_vorticity(i, j) << " ";
+
+            out << "    ";
+            for (size_t k = 0; k < Q; k++)
+                out << h_f(i, j, k) << " ";
+            out << "    ";
+            for (size_t k = 0; k < Q; k++)
+                out << h_fb(i, j, k) << " ";
             out << std::endl;
         }
 }

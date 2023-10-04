@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "global_class.h"
 
 int main(int argc, char *argv[])
@@ -24,11 +25,15 @@ int main(int argc, char *argv[])
     {
         BaseSolver Bs(NX, NY, Re_, U_, rho_, mx); // Ini
         Timer timer;
+
+#if defined(DEBUG)
+        sleep(20);
+#endif
         for (int tn = 0;; ++tn) // tn < 21
         {
             if (0 == rank && 0 == (tn % 2000))
                 timer.OutTime(), std::cout << "The " << std::setprecision(10) << tn << "th computation todo, time consumption: " << timer.time / 1000.0 << "s.\n";
-            Bs.Evolution();
+            Bs.Evolution(tn);
             if (tn > 1 && 0 == (tn % 10000))
             {
                 real_t L2Error = Bs.Error();

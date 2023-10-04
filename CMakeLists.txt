@@ -22,6 +22,14 @@ option(Kokkos_ENABLE_OPENMP "if enable OMP Parallel" ON) # Host Parallel and Dev
 option(Kokkos_ENABLE_HIP "if enable Kokkos HIP backend" OFF)
 option(Kokkos_ENABLE_CUDA "if enable Kokkos CUDA backend" ON)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(Kokkos_ENABLE_SERIAL "ON")
+  set(Kokkos_ENABLE_OPENMP "OFF")
+  set(Kokkos_ENABLE_HIP "OFF")
+  set(Kokkos_ENABLE_CUDA "OFF")
+  add_compile_options(-DDEBUG)
+endif()
+
 # set(Kokkos_BACKEND_ARCH "Kokkos_ARCH_ZEN3") # Host ARCH supported by Kokkos
 # set(Kokkos_BACKEND_ARCH "Kokkos_ARCH_AMPERE86") # CUDA ARCH supported by Kokkos
 set(Kokkos_BACKEND_ARCH "Kokkos_ARCH_TURING75") # CUDA ARCH supported by Kokkos

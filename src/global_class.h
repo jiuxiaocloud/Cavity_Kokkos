@@ -95,9 +95,9 @@ public:
 
     BaseSolver(size_t nx, size_t ny, real_t Re_, real_t U_, real_t rho_, int mx);
     void Initialize();
-    void Evolution();
+    void Evolution(int tn);
     void Collision();
-    void Propagation();
+    void Propagation(int tn);
     void Boundary();
     void Update();
     real_t Error();
