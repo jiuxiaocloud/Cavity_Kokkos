@@ -31,6 +31,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 # set(Kokkos_BACKEND_ARCH "Kokkos_ARCH_ZEN3") # Host ARCH supported by Kokkos
+# set(Kokkos_BACKEND_ARCH "Kokkos_ARCH_GFX906") # HIP  ARCH supported by Kokkos
 # set(Kokkos_BACKEND_ARCH "Kokkos_ARCH_AMPERE86") # CUDA ARCH supported by Kokkos
 set(Kokkos_BACKEND_ARCH "Kokkos_ARCH_TURING75") # CUDA ARCH supported by Kokkos
 

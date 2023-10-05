@@ -29,8 +29,10 @@ int main(int argc, char *argv[])
 #endif
         for (int tn = 0;; ++tn) // tn < 21
         {
-            if (0 == rank && 0 == (tn % 2000))
+            if (0 == rank && 0 == (tn % 20))
                 timer.OutTime(), std::cout << "The " << std::setprecision(10) << tn << "th computation todo, time consumption: " << timer.time / 1000.0 << "s.\n";
+            if (20 == tn)
+                break;
             Bs.Evolution(tn);
             if (tn > 1 && 0 == (tn % 10000))
             {
